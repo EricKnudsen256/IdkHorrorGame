@@ -3,23 +3,26 @@
 using UnityEngine.InputSystem;
 #endif
 
+
+//adapted from unity's inbuilt first person controller package
+
 namespace StarterAssets
 {
-	[RequireComponent(typeof(CharacterController))]
+    [RequireComponent(typeof(CharacterController))]
 #if ENABLE_INPUT_SYSTEM
-	[RequireComponent(typeof(PlayerInput))]
+    [RequireComponent(typeof(PlayerInput))]
 #endif
-	public class FirstPersonController : MonoBehaviour
-	{
-		[Header("Player")]
-		[Tooltip("Move speed of the character in m/s")]
-		public float MoveSpeed = 4.0f;
-		[Tooltip("Sprint speed of the character in m/s")]
-		public float SprintSpeed = 6.0f;
-		[Tooltip("Rotation speed of the character")]
-		public float RotationSpeed = 1.0f;
-		[Tooltip("Acceleration and deceleration")]
-		public float SpeedChangeRate = 10.0f;
+    public class FirstPersonController : MonoBehaviour
+    {
+        [Header("Player")]
+        [Tooltip("Move speed of the character in m/s")]
+        public float MoveSpeed = 4.0f;
+        [Tooltip("Sprint speed of the character in m/s")]
+        public float SprintSpeed = 6.0f;
+        [Tooltip("Rotation speed of the character")]
+        public float RotationSpeed = 1.0f;
+        [Tooltip("Acceleration and deceleration")]
+        public float SpeedChangeRate = 10.0f;
 
 		[Space(10)]
 		[Tooltip("The height the player can jump")]
@@ -63,6 +66,8 @@ namespace StarterAssets
 		// timeout deltatime
 		private float _jumpTimeoutDelta;
 		private float _fallTimeoutDelta;
+
+        private bool _doInteraction;
 
 	
 #if ENABLE_INPUT_SYSTEM
@@ -108,6 +113,8 @@ namespace StarterAssets
 			// reset our timeouts on start
 			_jumpTimeoutDelta = JumpTimeout;
 			_fallTimeoutDelta = FallTimeout;
+
+            _doInteraction = false;
 		}
 
 		private void Update()
@@ -115,12 +122,14 @@ namespace StarterAssets
 			JumpAndGravity();
 			GroundedCheck();
 			Move();
+            Interact();
 		}
 
 		private void LateUpdate()
 		{
 			CameraRotation();
-		}
+            CheckRaycastInteractions();
+        }
 
 		private void GroundedCheck()
 		{
@@ -198,7 +207,22 @@ namespace StarterAssets
 			_controller.Move(inputDirection.normalized * (_speed * Time.deltaTime) + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
 		}
 
-		private void JumpAndGravity()
+        private void Interact()
+        {
+
+
+            if (!_input.interact)
+            {
+                _doInteraction = false;
+                return;
+            }
+
+            _doInteraction = true;
+
+
+        }
+
+        private void JumpAndGravity()
 		{
 			if (Grounded)
 			{
@@ -253,7 +277,47 @@ namespace StarterAssets
 			return Mathf.Clamp(lfAngle, lfMin, lfMax);
 		}
 
-		private void OnDrawGizmosSelected()
+        private void CheckRaycastInteractions()
+        {
+            int layerMask = 1 << 8;
+
+            // This would cast rays only against colliders in layer 8.
+            // But instead we want to collide against everything except layer 8. The ~ operator does this, it inverts a bitmask.
+
+            RaycastHit hit;
+            // Does the ray intersect any objects excluding the player layer
+            if (Physics.Raycast(_mainCamera.transform.position, _mainCamera.transform.TransformDirection(Vector3.forward), out hit, Mathf.Infinity, layerMask))
+            {
+                //do the raycast hit event from the target
+                //if _doInteract, make sure that method is called on hit target
+
+                IInteractable interactable = hit.transform.gameObject.GetComponent<IInteractable>();
+
+                if(interactable == null)
+                {
+                    Debug.LogError("Interactable object on " + hit.transform.gameObject.name + " not found. Make sure the collider for the interactable and the interactable script are on the same object");
+                    return;
+                }
+
+                interactable.OnRaycastOver();
+
+                Debug.Log("Press " + _input.GetInputKeyByName("Interact") + " to interact");
+
+                if(_doInteraction)
+                {
+                    interactable.OnInteract(INTERACTION_TYPE.INTERACTION_PLAYER);
+                    _doInteraction = false;
+
+                    //Debug.Log("Interacted");
+                }
+
+            }
+
+            _input.interact = false;
+        }
+
+
+        private void OnDrawGizmosSelected()
 		{
 			Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
 			Color transparentRed = new Color(1.0f, 0.0f, 0.0f, 0.35f);
