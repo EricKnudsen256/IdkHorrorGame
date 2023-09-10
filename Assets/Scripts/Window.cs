@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class Window : MonoBehaviour, IInteractable
 {
@@ -10,12 +11,28 @@ public class Window : MonoBehaviour, IInteractable
     private bool isOpen;
     private bool playerInteracted;
 
+    public TMP_Text interactText;
+
     private void Awake()
     {
         isOpen = false;
         playerInteracted = false;
         animator = GetComponent<Animator>();
         interactCollider = GetComponent<Collider>();
+        
+        if(interactText != null)
+        {
+            interactText.gameObject.SetActive(false);
+        }
+        else
+        {
+            Debug.LogWarning("InteractText in Window class not set");
+        }
+    }
+
+    private void Update()
+    {
+        interactText.gameObject.SetActive(false);
     }
 
 
@@ -46,8 +63,20 @@ public class Window : MonoBehaviour, IInteractable
 
     }
 
-    public void OnRaycastOver()
+    public void OnRaycastOver(string interactKey)
     {
-        //what should be done when the player raycasts over the object. For example, display text showing the input to open a window
+        if(interactText.gameObject.activeSelf == false)
+        {
+            interactText.gameObject.SetActive(true);
+            if(isOpen)
+            {
+                interactText.text = "Press " + interactKey + " to close";
+            }
+            else
+            {
+                interactText.text = "Press " + interactKey + " to open";
+            }
+        }
+        
     }
 }

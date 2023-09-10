@@ -11,6 +11,6 @@ public enum INTERACTION_TYPE
 
 public interface IInteractable
 {
-    void OnRaycastOver();
+    void OnRaycastOver(string interactKey);
     void OnInteract(INTERACTION_TYPE type);
 }

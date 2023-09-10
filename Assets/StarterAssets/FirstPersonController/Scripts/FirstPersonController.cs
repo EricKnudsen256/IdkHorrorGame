@@ -69,6 +69,8 @@ namespace StarterAssets
 
         private bool _doInteraction;
 
+        private string _interactKey;
+
 	
 #if ENABLE_INPUT_SYSTEM
 		private PlayerInput _playerInput;
@@ -115,7 +117,9 @@ namespace StarterAssets
 			_fallTimeoutDelta = FallTimeout;
 
             _doInteraction = false;
-		}
+
+            _interactKey = _input.GetInputKeyByName("Interact");
+        }
 
 		private void Update()
 		{
@@ -286,7 +290,7 @@ namespace StarterAssets
 
             RaycastHit hit;
             // Does the ray intersect any objects excluding the player layer
-            if (Physics.Raycast(_mainCamera.transform.position, _mainCamera.transform.TransformDirection(Vector3.forward), out hit, Mathf.Infinity, layerMask))
+            if (Physics.Raycast(_mainCamera.transform.position, _mainCamera.transform.TransformDirection(Vector3.forward), out hit, 2, layerMask))
             {
                 //do the raycast hit event from the target
                 //if _doInteract, make sure that method is called on hit target
@@ -299,9 +303,7 @@ namespace StarterAssets
                     return;
                 }
 
-                interactable.OnRaycastOver();
-
-                Debug.Log("Press " + _input.GetInputKeyByName("Interact") + " to interact");
+                interactable.OnRaycastOver(_interactKey);
 
                 if(_doInteraction)
                 {
