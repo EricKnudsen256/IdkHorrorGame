@@ -283,17 +283,21 @@ namespace StarterAssets
 
         private void CheckRaycastInteractions()
         {
-            int layerMask = 1 << 8;
 
             // This would cast rays only against colliders in layer 8.
             // But instead we want to collide against everything except layer 8. The ~ operator does this, it inverts a bitmask.
 
             RaycastHit hit;
             // Does the ray intersect any objects excluding the player layer
-            if (Physics.Raycast(_mainCamera.transform.position, _mainCamera.transform.TransformDirection(Vector3.forward), out hit, 2, layerMask))
+            if (Physics.Raycast(_mainCamera.transform.position, _mainCamera.transform.TransformDirection(Vector3.forward), out hit, 2))
             {
                 //do the raycast hit event from the target
                 //if _doInteract, make sure that method is called on hit target
+
+                if(hit.transform.gameObject.layer != 8)
+                {
+                    return;
+                }
 
                 IInteractable interactable = hit.transform.gameObject.GetComponent<IInteractable>();
 
